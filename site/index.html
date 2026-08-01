@@ -5,25 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Adam Coulter — Projects and tools</title>
     <meta name="description" content="Small, focused tools for developers and curious technical work by Adam Coulter.">
-    <meta name="theme-color" content="#f7f9fc" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#16191d" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#181a1b" media="(prefers-color-scheme: dark)">
     <meta property="og:title" content="Adam Coulter — Projects and tools">
     <meta property="og:description" content="Small, focused tools for developers and curious technical work.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://adamcoulteroz.github.io/">
     <link rel="canonical" href="https://adamcoulteroz.github.io/">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600&amp;family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap">
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <header class="site-header">
-        <a class="site-name" href="/" aria-label="Adam Coulter home">Adam Coulter</a>
-        <a class="github-link" href="https://github.com/AdamCoulterOz">
-            GitHub
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M7 4H4v12h12v-3M11 4h5v5M9 11l7-7" />
-            </svg>
-        </a>
+    <header class="site-nav">
+        <div class="site-nav__inner">
+            <a class="site-brand" href="/" aria-label="Adam Coulter home">
+                <span class="site-mark" aria-hidden="true">AC</span>
+                <span>Adam Coulter</span>
+            </a>
+            <a class="github-link" href="https://github.com/AdamCoulterOz">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.2-1.5 6.2-6.7a5.2 5.2 0 0 0-1.5-3.6 4.9 4.9 0 0 0-.1-3.6s-1.2-.4-3.9 1.5a13.4 13.4 0 0 0-7 0C5.6 1.7 4.4 2.1 4.4 2.1a4.9 4.9 0 0 0-.1 3.6A5.2 5.2 0 0 0 2.8 9.3c0 5.2 3.2 6.4 6.2 6.7a3.4 3.4 0 0 0-.9 2.5V22" />
+                </svg>
+                <span>GitHub</span>
+            </a>
+        </div>
     </header>
 
     <main>
@@ -68,8 +76,14 @@
         </nav>
     </main>
 
-    <footer>
-        <span>Sydney, Australia</span>
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <div class="footer-brand">
+                <span class="site-mark site-mark--footer" aria-hidden="true">AC</span>
+                <strong>Adam Coulter</strong>
+            </div>
+            <span>Sydney, Australia</span>
+        </div>
     </footer>
 </body>
 </html>

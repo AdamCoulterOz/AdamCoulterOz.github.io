@@ -62,6 +62,6 @@ The browser loads static HTML and CSS without client application startup. Deploy
 ## 10. Agent guidance
 
 - Verify a prospective project URL before adding it.
-- Preserve the open editorial list rather than converting it to a generic card grid.
+- Preserve the concise project-index structure and keep its design tokens aligned with Meridian's published Keel visual system.
 - Keep visible copy, `CONTEXT.md`, and this public contract synchronized.
 - Verify desktop, mobile, light, and dark projections after presentation changes.

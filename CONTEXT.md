@@ -13,7 +13,7 @@ The current index contains:
 ## Architecture
 
 - `site/index.html` owns the semantic project index and public metadata.
-- `site/styles.css` owns the responsive visual system and system-following light/dark themes.
+- `site/styles.css` owns the responsive visual system and system-following light/dark themes. Its Keel design tokens, typography, surfaces, spacing, radii, and motion align with the Meridian public site.
 - `site/404.html` owns the root-site not-found experience.
 - `.github/workflows/deploy-pages.yml` uploads the static `site` directory and deploys it to GitHub Pages after every `main` push.
 
@@ -23,6 +23,7 @@ The current index contains:
 - Project entries link only to verified public Pages sites.
 - The visible index and `INTERFACE.md` project list stay synchronized.
 - The page follows the operating-system colour scheme and remains usable at a 320px viewport width.
+- The visual language remains aligned with Meridian's published Keel system while retaining this site's project-index information architecture.
 - The workflow publishes only `site`, not repository documentation or implementation metadata.
 
 ## Operational constraints
