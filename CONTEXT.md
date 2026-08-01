@@ -15,11 +15,13 @@ The current index contains:
 - `site/index.html` owns the semantic project index and public metadata.
 - `site/styles.css` owns the responsive visual system and system-following light/dark themes. Its Keel design tokens, typography, surfaces, spacing, radii, and motion align with the Meridian public site.
 - `site/404.html` owns the root-site not-found experience.
+- `site/robots.txt` and `site/sitemap.xml` expose the root index and all verified child sites to crawlers.
 - `.github/workflows/deploy-pages.yml` uploads the static `site` directory and deploys it to GitHub Pages after every `main` push.
 
 ## Current invariants
 
 - The root site remains static HTML and CSS with no runtime framework or build dependency.
+- The full project index and descriptions remain available without JavaScript. Canonical, social, keyword, crawler, and structured metadata describe the same visible projects rather than a crawler-only variant.
 - Project entries link only to verified public Pages sites.
 - The visible index and `INTERFACE.md` project list stay synchronized.
 - The page follows the operating-system colour scheme and remains usable at a 320px viewport width.

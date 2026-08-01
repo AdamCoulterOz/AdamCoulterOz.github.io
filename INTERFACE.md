@@ -30,12 +30,15 @@ A project entry has an ordinal, name, concise description, and absolute-root Pag
 - Bandwidth Calculator: `https://adamcoulteroz.github.io/bandwidth-calculator/`
 - Fluent Icon Browser: `https://adamcoulteroz.github.io/fluent-icon-browser/`
 - Meridian: `https://adamcoulteroz.github.io/Meridian/`
+- Crawler policy: `https://adamcoulteroz.github.io/robots.txt`
+- Project sitemap: `https://adamcoulteroz.github.io/sitemap.xml`
 
 ## 5. Invariants
 
 - Every listed project path resolves to a public site before it is added.
 - Root-relative assets and links remain valid from the user-site origin.
 - Project descriptions remain concise and do not claim capabilities beyond the owning repository's published description.
+- Metadata, structured data, sitemap entries, and visible project copy remain semantically aligned.
 - Light and dark presentation follow `prefers-color-scheme`; no site-owned theme state is persisted.
 
 ## 6. Side effects

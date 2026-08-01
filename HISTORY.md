@@ -11,3 +11,8 @@
 
 - Replaced the index's standalone visual tokens with Meridian's Keel typography, semantic colours, surfaces, spacing, radii, focus treatment, and motion.
 - Preserved the root site's concise project-index structure while making it visually coherent with the Meridian project site.
+
+## 2026-08-02: Publish a complete discovery surface
+
+- Added canonical crawler directives, keywords, social metadata, and Schema.org profile/project data without introducing a JavaScript dependency.
+- Expanded the root sitemap to enumerate the verified Bandwidth Calculator, Fluent Icon Browser, and Meridian child sites.
