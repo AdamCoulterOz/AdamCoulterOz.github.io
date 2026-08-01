@@ -1,0 +1,247 @@
+:root {
+    color-scheme: light dark;
+    --background: #f7f9fc;
+    --surface-hover: #edf3fc;
+    --text: #07142e;
+    --muted: #59647a;
+    --line: #ccd3df;
+    --accent: #0867e8;
+    --focus: #0458c8;
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-synthesis: none;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-width: 320px;
+    background: var(--background);
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    background: var(--background);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+}
+
+.site-header,
+main,
+footer {
+    width: min(100%, 96rem);
+    margin-inline: auto;
+    padding-inline: clamp(1.5rem, 4vw, 3.25rem);
+}
+
+.site-header {
+    min-height: 5.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.site-name {
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+    font-weight: 720;
+    letter-spacing: -0.035em;
+    text-decoration: none;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+    font-size: 1.05rem;
+    font-weight: 560;
+    text-decoration: none;
+}
+
+.github-link svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+main {
+    align-self: center;
+    padding-block: clamp(4.5rem, 9vh, 7.5rem) clamp(3.5rem, 7vh, 6rem);
+}
+
+.intro {
+    margin-bottom: clamp(3.75rem, 7vw, 6.5rem);
+}
+
+h1 {
+    max-width: 12ch;
+    margin: 0;
+    font-size: clamp(3rem, 7.2vw, 6rem);
+    line-height: 0.96;
+    letter-spacing: -0.07em;
+    text-wrap: balance;
+}
+
+.intro p {
+    max-width: 44rem;
+    margin: 1.8rem 0 0;
+    color: var(--muted);
+    font-size: clamp(1.08rem, 2vw, 1.45rem);
+    line-height: 1.5;
+}
+
+.project-index {
+    display: block;
+    border-bottom: 1px solid var(--line);
+}
+
+.project-row {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr) 3rem;
+    align-items: center;
+    gap: 1.5rem;
+    min-height: 10.25rem;
+    padding: 1.5rem 1rem;
+    border-top: 1px solid var(--line);
+    text-decoration: none;
+    transition: background-color 160ms ease, color 160ms ease;
+}
+
+.project-number {
+    align-self: start;
+    padding-top: 0.5rem;
+    color: var(--accent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    letter-spacing: -0.06em;
+}
+
+.project-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.7rem;
+}
+
+.project-copy strong {
+    font-size: clamp(1.8rem, 4.2vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.055em;
+}
+
+.project-copy > span {
+    color: var(--muted);
+    font-size: clamp(1rem, 1.8vw, 1.25rem);
+    line-height: 1.45;
+}
+
+.project-arrow {
+    width: 2.6rem;
+    height: 2.6rem;
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 160ms ease;
+}
+
+.project-row:hover {
+    background: var(--surface-hover);
+}
+
+.project-row:hover .project-arrow {
+    transform: translateX(0.35rem);
+}
+
+.site-name:focus-visible,
+.github-link:focus-visible,
+.project-row:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+}
+
+footer {
+    min-height: 5.5rem;
+    display: flex;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #16191d;
+        --surface-hover: #222a35;
+        --text: #f1f4fa;
+        --muted: #a9b4c7;
+        --line: #353b45;
+        --accent: #72a9ff;
+        --focus: #9bc1ff;
+    }
+}
+
+@media (max-width: 680px) {
+    .site-header {
+        min-height: 4.75rem;
+    }
+
+    main {
+        align-self: start;
+        padding-block: 3.75rem 2.5rem;
+    }
+
+    .intro {
+        margin-bottom: 3.75rem;
+    }
+
+    h1 {
+        font-size: clamp(3.2rem, 16vw, 4.5rem);
+    }
+
+    .intro p {
+        margin-top: 1.4rem;
+    }
+
+    .project-row {
+        grid-template-columns: 3rem minmax(0, 1fr) 2rem;
+        gap: 0.85rem;
+        min-height: 9rem;
+        padding-inline: 0.25rem;
+    }
+
+    .project-number {
+        font-size: 1.1rem;
+    }
+
+    .project-copy strong {
+        font-size: clamp(1.55rem, 8vw, 2.15rem);
+    }
+
+    .project-arrow {
+        width: 2rem;
+        height: 2rem;
+    }
+}

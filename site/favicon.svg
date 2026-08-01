@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    rect { fill: #0867e8; }
+    text { fill: white; font: 700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: -2px; }
+    @media (prefers-color-scheme: dark) { rect { fill: #72a9ff; } text { fill: #07142e; } }
+  </style>
+  <rect width="64" height="64" rx="14" />
+  <text x="32" y="40" text-anchor="middle">AC</text>
+</svg>
