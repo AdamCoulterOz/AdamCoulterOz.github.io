@@ -16,6 +16,7 @@ The current index contains:
 - `site/styles.css` owns the responsive visual system and system-following light/dark themes. Its Keel design tokens, typography, surfaces, spacing, radii, and motion align with the Meridian public site.
 - `site/404.html` owns the root-site not-found experience.
 - `site/robots.txt` and `site/sitemap.xml` expose the root index and all verified child sites to crawlers.
+- `site/google8597bcde2d69f04b.html` is the durable Google Search Console ownership proof for the root URL-prefix property.
 - `.github/workflows/deploy-pages.yml` uploads the static `site` directory and deploys it to GitHub Pages after every `main` push.
 
 ## Current invariants
@@ -26,6 +27,7 @@ The current index contains:
 - The visible index and `INTERFACE.md` project list stay synchronized.
 - The page follows the operating-system colour scheme and remains usable at a 320px viewport width.
 - The visual language remains aligned with Meridian's published Keel system while retaining this site's project-index information architecture.
+- The Google ownership verification file remains published at the site root so Search Console access is not invalidated.
 - The workflow publishes only `site`, not repository documentation or implementation metadata.
 
 ## Operational constraints

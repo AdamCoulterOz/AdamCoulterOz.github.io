@@ -16,3 +16,8 @@
 
 - Added canonical crawler directives, keywords, social metadata, and Schema.org profile/project data without introducing a JavaScript dependency.
 - Expanded the root sitemap to enumerate the verified Bandwidth Calculator, Fluent Icon Browser, and Meridian child sites.
+
+## 2026-08-02: Establish Google Search Console ownership
+
+- Added a durable root verification file for the `https://adamcoulteroz.github.io/` URL-prefix property.
+- Kept ownership proof in the published static artifact so sitemap submission and indexing diagnostics remain available to the verified owner.
