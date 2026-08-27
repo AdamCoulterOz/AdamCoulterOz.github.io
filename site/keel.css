@@ -1,4 +1,4 @@
-/* vendored from AdamCoulterOz/keel v0.1.2. Refresh with ./update-keel.sh, do not edit. */
+/* vendored from AdamCoulterOz/keel v0.2.1. Refresh with ./update-keel.sh, do not edit. */
 /* keel - generated bundle. Do not edit.
  *
  * keel.css and everything it imports, flattened into one file so a site
@@ -105,7 +105,7 @@
 
   --amber-500: #ff9f0a;
   --amber-600: #e08600;
-  --amber-700: #ad6800;
+  --amber-700: #b45309;  /* 5.02:1 on white. #ad6800 was 4.41 and failed AA as --cb-n. */
   --amber-50:  #fff4e0;
 
   --red-500: #ff3b30;
@@ -137,14 +137,26 @@
   --surface-card:            var(--gray-0);
   --surface-overlay:         rgba(255, 255, 255, 0.72);
   --surface-inverse:         var(--gray-900);
-  --surface-midnight:        var(--midnight-900);
-  --surface-midnight-raised: var(--midnight-800);
   --scrim:                   rgba(6, 11, 26, 0.55);
 
-  /* The footer band. Deliberately midnight in BOTH themes: it is a branded
-     anchor at the foot of the page, and blue against a neutral dark ground is
-     a band, not the blue-on-blue that --surface-midnight was toned out of. */
-  --surface-footer: var(--midnight-900);
+  /* ---- Midnight ----
+     A ROLE, not a description of a colour, and the name is shorthand for a rule
+     the same way --signal is:
+
+       A surface that deliberately opts out of theming. It is the same in light
+       and dark, on purpose, and it is for moments the page chooses to go dark:
+       a footer band, a stats band, a hero. Rare by design. If a surface should
+       follow the theme, it is not this one.
+
+     That fixed quality is the whole reason it needs its own ink, borders and
+     accent below. Everything on a ground that never moves must never move
+     either, and a semantic token that re-themes would slide out from under it.
+
+     There is no --surface-footer. A token named for one place it is used cannot
+     be used anywhere else without lying, and a footer is simply the most common
+     midnight moment rather than a different thing. */
+  --surface-midnight:        var(--midnight-900);
+  --surface-midnight-raised: var(--midnight-800);
 
   /* Borders */
   --border-subtle:      var(--gray-200);
@@ -160,11 +172,31 @@
   --accent-subtle:  var(--blue-50);
   --accent-ring:    rgba(11, 95, 255, 0.32);
 
+  /* Accent marks on a midnight ground. Completes the on-midnight family, which
+     exists so ink on a ground that never shifts does not shift either, without
+     anyone reaching for a ramp to get that.
+
+     blue-300 rather than blue-400: 7.87:1 on midnight against 5.23:1. The
+     siblings are chosen FOR this ground rather than borrowed from a scale, and
+     this should be too. A token that means "legible on midnight" pointing at
+     the rung hardest to see there had inherited the wrong default. */
+  --accent-on-midnight: var(--blue-300);
+
   /* Signal. Pair the fill with midnight ink; never body or link colour. */
   --signal:        var(--signal-500);
   --signal-text:   var(--signal-700);
   --signal-on:     var(--midnight-900);
   --signal-subtle: var(--signal-50);
+
+  /* Tinted borders, each matching its -subtle fill.
+     A subtle fill on a card has almost no edge of its own, and the border is
+     what makes it read as a chip rather than as tinted text. Alpha rather than
+     opaque, so they hold over any ground and not only over a card. */
+  --accent-border:  rgba(11, 95, 255, 0.28);
+  --signal-border:  rgba(198, 242, 60, 0.55);
+  --success-border: rgba(31, 168, 85, 0.28);
+  --warning-border: rgba(224, 134, 0, 0.30);
+  --danger-border:  rgba(229, 50, 42, 0.28);
 
   /* Fills and control tracks */
   --fill-secondary:       var(--gray-100);
@@ -301,7 +333,10 @@
   --radius-xs:   4px;
   --radius-sm:   6px;
   --radius-md:   10px;
-  --radius-lg:   14px;
+  --radius-lg:   12px;   /* 12, not the export's 14. md and xl agree with the
+                            page that was tuned against real content; only lg
+                            differed, which made 14 the outlier. The code block
+                            is the main consumer and was designed at 12. */
   --radius-xl:   18px;
   --radius-2xl:  24px;
   --radius-3xl:  32px;
@@ -417,8 +452,6 @@ code, pre, kbd, samp {
   --kd-surface-card:            #1e2021;
   --kd-surface-overlay:         rgba(24, 26, 27, 0.72);
   --kd-surface-inverse:         #d5d1cc;
-  --kd-surface-midnight:        #141617;
-  --kd-surface-midnight-raised: #1c1f21;
   --kd-scrim:                   rgba(10, 10, 9, 0.6);
 
   /* Text. The warm ink is the signature of this scheme. */
@@ -446,6 +479,14 @@ code, pre, kbd, samp {
   /* Signal citron. Legible enough on dark to be its own text colour. */
   --kd-signal-text:   #c6f23c;
   --kd-signal-subtle: rgba(198, 242, 60, 0.16);
+
+  /* Tinted borders. Lower alpha than light: the fills they edge are themselves
+     translucent here, so the same value reads louder. */
+  --kd-accent-border:  rgba(91, 146, 255, 0.42);
+  --kd-signal-border:  rgba(198, 242, 60, 0.40);
+  --kd-success-border: rgba(48, 209, 88, 0.38);
+  --kd-warning-border: rgba(224, 163, 74, 0.38);
+  --kd-danger-border:  rgba(255, 129, 120, 0.38);
 
   /* State. Vivid hues, and the subtle fills become translucent tints so they
      pick up whatever surface they land on. */
@@ -487,8 +528,6 @@ code, pre, kbd, samp {
     --surface-base: var(--kd-surface-base); --surface-subtle: var(--kd-surface-subtle);
     --surface-sunken: var(--kd-surface-sunken); --surface-card: var(--kd-surface-card);
     --surface-overlay: var(--kd-surface-overlay); --surface-inverse: var(--kd-surface-inverse);
-    --surface-midnight: var(--kd-surface-midnight);
-    --surface-midnight-raised: var(--kd-surface-midnight-raised);
     --scrim: var(--kd-scrim);
     --text-primary: var(--kd-text-primary); --text-secondary: var(--kd-text-secondary);
     --text-tertiary: var(--kd-text-tertiary); --text-disabled: var(--kd-text-disabled);
@@ -499,6 +538,12 @@ code, pre, kbd, samp {
     --accent-pressed: var(--kd-accent-pressed); --accent-subtle: var(--kd-accent-subtle);
     --accent-ring: var(--kd-accent-ring);
     --signal-text: var(--kd-signal-text); --signal-subtle: var(--kd-signal-subtle);
+  --accent-border: var(--kd-accent-border); --signal-border: var(--kd-signal-border);
+  --success-border: var(--kd-success-border); --warning-border: var(--kd-warning-border);
+  --danger-border: var(--kd-danger-border);
+    --accent-border: var(--kd-accent-border); --signal-border: var(--kd-signal-border);
+    --success-border: var(--kd-success-border); --warning-border: var(--kd-warning-border);
+    --danger-border: var(--kd-danger-border);
     --success: var(--kd-success); --success-subtle: var(--kd-success-subtle);
     --warning: var(--kd-warning); --warning-subtle: var(--kd-warning-subtle);
     --danger: var(--kd-danger); --danger-hover: var(--kd-danger-hover);
@@ -517,8 +562,6 @@ code, pre, kbd, samp {
   --surface-base: var(--kd-surface-base); --surface-subtle: var(--kd-surface-subtle);
   --surface-sunken: var(--kd-surface-sunken); --surface-card: var(--kd-surface-card);
   --surface-overlay: var(--kd-surface-overlay); --surface-inverse: var(--kd-surface-inverse);
-  --surface-midnight: var(--kd-surface-midnight);
-  --surface-midnight-raised: var(--kd-surface-midnight-raised);
   --scrim: var(--kd-scrim);
   --text-primary: var(--kd-text-primary); --text-secondary: var(--kd-text-secondary);
   --text-tertiary: var(--kd-text-tertiary); --text-disabled: var(--kd-text-disabled);
@@ -547,7 +590,6 @@ code, pre, kbd, samp {
   --surface-base: var(--gray-0); --surface-subtle: var(--gray-50);
   --surface-sunken: var(--gray-100); --surface-card: var(--gray-0);
   --surface-overlay: rgba(255, 255, 255, 0.72); --surface-inverse: var(--gray-900);
-  --surface-midnight: var(--midnight-900); --surface-midnight-raised: var(--midnight-800);
   --scrim: rgba(6, 11, 26, 0.55);
   --text-primary: var(--gray-900); --text-secondary: var(--gray-600);
   --text-tertiary: var(--gray-500); --text-disabled: var(--gray-400);
@@ -558,6 +600,9 @@ code, pre, kbd, samp {
   --accent-pressed: var(--blue-800); --accent-subtle: var(--blue-50);
   --accent-ring: rgba(11, 95, 255, 0.32);
   --signal-text: var(--signal-700); --signal-subtle: var(--signal-50);
+  --accent-border: rgba(11, 95, 255, 0.28); --signal-border: rgba(198, 242, 60, 0.55);
+  --success-border: rgba(31, 168, 85, 0.28); --warning-border: rgba(224, 134, 0, 0.30);
+  --danger-border: rgba(229, 50, 42, 0.28);
   --success: var(--green-600); --success-subtle: var(--green-50);
   --warning: var(--amber-600); --warning-subtle: var(--amber-50);
   --danger: var(--red-600); --danger-hover: var(--red-700); --danger-subtle: var(--red-50);

@@ -234,7 +234,7 @@ h1 {
 
 .site-footer {
     padding-block: 48px;
-    background: var(--surface-footer);
+    background: var(--surface-midnight);
     color: rgba(255, 255, 255, 0.6);
 }
 
