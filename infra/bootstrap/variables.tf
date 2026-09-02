@@ -78,10 +78,10 @@ variable "github_actions_app_display_name" {
 variable "github_oidc_subject" {
   description = "Exact GitHub OIDC subject allowed to exchange a token."
   type        = string
-  default     = "repo:AdamCoulterOz/AdamCoulterOz.github.io:environment:github-pages"
+  default     = "repo:AdamCoulterOz@6822248/AdamCoulterOz.github.io@1319345545:environment:github-pages"
 
   validation {
-    condition     = var.github_oidc_subject == "repo:AdamCoulterOz/AdamCoulterOz.github.io:environment:github-pages"
+    condition     = var.github_oidc_subject == "repo:AdamCoulterOz@6822248/AdamCoulterOz.github.io@1319345545:environment:github-pages"
     error_message = "The GitHub OIDC subject must remain environment-scoped to github-pages."
   }
 }

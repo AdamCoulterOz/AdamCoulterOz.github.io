@@ -85,7 +85,7 @@ The current workflow uploads only `site`. There is no package manager, applicati
 3. A secretless federated credential with:
    - issuer `https://token.actions.githubusercontent.com`
    - audience `api://AzureADTokenExchange`
-   - subject `repo:AdamCoulterOz/AdamCoulterOz.github.io:environment:github-pages`
+   - subject `repo:AdamCoulterOz@6822248/AdamCoulterOz.github.io@1319345545:environment:github-pages`
 4. Resource-group-scoped `Owner` for the service principal. No subscription-scoped role is granted.
 5. Terraform state storage `stadamcgpiac1319345545` and private `tfstate` container.
 6. `Storage Blob Data Contributor` for the service principal on the state account.
@@ -266,8 +266,8 @@ The pre-bootstrap validation workflow has advanced this plan to `Validated`. App
 
 | File/path | Purpose | Status |
 |---|---|---|
-| `.azure/deployment-plan.md` | Source-of-truth plan | Complete; Validated pre-bootstrap |
-| `infra/bootstrap/` | One-time RG, state, Entra app/SP/OIDC, and bootstrap RBAC Terraform | Implemented; not applied |
+| `.azure/deployment-plan.md` | Source-of-truth plan | Complete; Validated |
+| `infra/bootstrap/` | One-time RG, state, Entra app/SP/OIDC, and bootstrap RBAC Terraform | Implemented; applied; post-apply/post-migration plan has no changes |
 | `archive/azure.yaml` | azd service and Terraform orchestration | Implemented; not provisioned |
 | `archive/infra/` | Platform Terraform derived from the official Flex Functions template | Implemented; not applied |
 | `archive/src/` | .NET 10 isolated weekly timer only; no HTTP recovery endpoint | Implemented; not deployed |
@@ -334,15 +334,16 @@ Azure validation is complete. The platform live plan depended on the bootstrap-o
 | Flex catalog | Australia East catalog supports `dotnet-isolated` 10, FC1, 2,048 MB, and a minimum maximum-instance count of 1 | Pass | 2026-09-02 |
 | Policy | Only the inherited `ASC Default` policy assignment is present | Pass | 2026-09-02 |
 | Azure Resource Graph capacity | Counts remain 29 storage accounts and 28 plans, sites, workspaces, and components; target resource group/application are absent and all three storage-account names are available | Pass | 2026-09-02 |
-| Bootstrap live plan | Approved tenant/subscription plan: 10 add, 0 change, 0 destroy | Pass | 2026-09-02 |
-| Bootstrap deployment | Resource group, Standard LRS Terraform-state account, and private `tfstate` container created | Pass | 2026-09-02 |
-| Bootstrap identity and RBAC | Entra application/service principal and exact `github-pages` environment FIC created; Owner is scoped only to the resource group and Storage Blob Data Contributor only to the state account | Pass | 2026-09-02 |
-| Bootstrap remote state | Bootstrap state migrated to the remote backend; post-migration plan reported no changes | Pass | 2026-09-02 |
+| Bootstrap pre-apply plan | Approved tenant/subscription plan: 0 add, 1 change, 0 destroy (the exact FIC subject correction) | Pass | 2026-09-02 |
+| Bootstrap live apply | Applied with 0 add, 1 change, 0 destroy; app, client, and service-principal IDs and role scopes remained unchanged | Pass | 2026-09-02 |
+| Bootstrap identity and RBAC | Entra application/service principal and corrected exact `github-pages` environment FIC present; Owner is scoped only to the resource group and Storage Blob Data Contributor only to the state account | Pass | 2026-09-02 |
+| Bootstrap remote state | Bootstrap state migrated to the remote backend; post-apply/post-migration plan reported no changes | Pass | 2026-09-02 |
 | Static RBAC verification | Required scoped role assignments and absence of broader credentials/roles verified | Pass | 2026-09-02 |
 | azd availability | `azd` 1.32 installed | Pass | 2026-09-02 |
 | Browser/static checks | JavaScript unit and syntax, workflow YAML, and diff checks passed | Pass | 2026-09-02 |
 | Rendered site checks | 1440 px and 320 px light/dark/focus projections passed with no storage or overflow | Pass | 2026-09-02 |
 | Platform remote live plan | Bootstrap-owned resource group and backend resolved; accepted plan: 25 add, 0 change, 0 destroy | Pass | 2026-09-02 |
+| Protected GitHub pipeline deployment | Platform provisioning, Pages deployment, and post-deployment verification remain pending | Pending | 2026-09-02 |
 
 ---
 

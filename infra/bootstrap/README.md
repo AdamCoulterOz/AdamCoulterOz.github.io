@@ -11,7 +11,7 @@ It creates only the approved resources and identities:
 - the single-tenant `AdamCoulterOz.github.io GitHub Actions` application and
   service principal, with no password, certificate, or API permissions;
 - exactly one GitHub federated credential, scoped to
-  `repo:AdamCoulterOz/AdamCoulterOz.github.io:environment:github-pages`;
+  `repo:AdamCoulterOz@6822248/AdamCoulterOz.github.io@1319345545:environment:github-pages`;
 - `Owner` for that service principal at the new resource group only, and
   `Storage Blob Data Contributor` on the state account;
 - `Storage Blob Data Contributor` for the one signed-in bootstrap operator on
