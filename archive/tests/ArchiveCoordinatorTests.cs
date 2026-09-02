@@ -1,6 +1,9 @@
 using System.Text.Json;
 using Archive.Functions;
 using Azure.Monitor.Query.Models;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -99,6 +102,27 @@ public sealed class ArchiveCoordinatorTests
         Assert.Contains("order by _TimeReceived asc, archive_event_id asc", query);
         Assert.Contains("take 500001", query);
         Assert.DoesNotContain("order by _TimeReceived asc, Id asc", query);
+    }
+
+    [Fact]
+    public void Resource_id_kql_filter_is_case_insensitive()
+    {
+        var query = AzureMonitorLogSource.BuildKql("AppPageViews", new ArchiveWindow(Now.AddDays(-2), Now.AddDays(-1)), "/SUBSCRIPTIONS/ABC/RESOURCEGROUPS/SITE");
+
+        Assert.Contains("| where _ResourceId =~ '/SUBSCRIPTIONS/ABC/RESOURCEGROUPS/SITE'", query);
+        Assert.DoesNotContain("| where _ResourceId ==", query);
+    }
+
+    [Fact]
+    public async Task Functions_application_insights_registers_compatible_telemetry_initializers()
+    {
+        var services = new ServiceCollection();
+
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.ConfigureFunctionsApplicationInsights();
+
+        await using var provider = services.BuildServiceProvider();
+        Assert.NotEmpty(provider.GetServices<ITelemetryInitializer>());
     }
 
     [Fact]

@@ -72,7 +72,7 @@ public sealed class AzureMonitorLogSource : IArchiveLogSource
 
         return $"""
             {table}
-            | where _ResourceId == '{sourceResource}'
+            | where _ResourceId =~ '{sourceResource}'
             | where _TimeReceived >= datetime({start}) and _TimeReceived < datetime({end})
             {identityExtension}
             | take {ArchiveProtocol.MaximumRowsPerQuery + 1}
