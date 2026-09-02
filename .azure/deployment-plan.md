@@ -274,7 +274,7 @@ The deployer service principal retains `Owner` on the dedicated resource group a
 | `.azure/deployment-plan.md` | Source-of-truth plan | Complete; Validated |
 | `infra/bootstrap/` | One-time RG, state, Entra app/SP/OIDC, and bootstrap RBAC Terraform | Implemented; applied; post-apply/post-migration plan has no changes |
 | `archive/azure.yaml` | azd service and Terraform orchestration | Implemented; used by the live protected deployment |
-| `archive/infra/` | Platform Terraform derived from the official Flex Functions template | Deployed; FTP-policy remediation validated and pending pipeline apply |
+| `archive/infra/` | Platform Terraform derived from the official Flex Functions template | Deployed; FTP-policy update remediation validated and pending pipeline apply |
 | `archive/src/` | .NET 10 isolated weekly timer only; no HTTP recovery endpoint | Implemented; deployment indexing fixed; scheduled output unproven |
 | `archive/*.csproj` | Pinned Function/Azure SDK dependencies and isolated-worker build | Validated and deployed; startup compatibility corrected |
 | `archive/tests/` | Cursor, retry, batching, idempotency, and fixture tests | Validated; 17/17 passing |
@@ -328,7 +328,7 @@ The deployer service principal retains `Owner` on the dedicated resource group a
 
 ## 11. Validation proof
 
-Azure validation is complete. The platform live plan depended on the bootstrap-owned resource group and remote backend; after bootstrap it ran remotely and was accepted before platform provisioning. A separate remediation remote plan validates the AzAPI FTP policy and the corrected Function settings, while live pipeline rerun and timer/archive acceptance remain pending after the failed first trigger-sync attempt described above.
+Azure validation is complete. The platform live plan depended on the bootstrap-owned resource group and remote backend; after bootstrap it ran remotely and was accepted before platform provisioning. A separate remediation remote plan validates the corrected Function settings and an AzAPI update of Azure's pre-materialized FTP child policy, while live pipeline rerun and timer/archive acceptance remain pending after the failed first trigger-sync attempt described above.
 
 | Check | Command or evidence | Result | Timestamp |
 |---|---|---|---|
@@ -350,10 +350,10 @@ Azure validation is complete. The platform live plan depended on the bootstrap-o
 | Rendered site checks | 1440 px and 320 px light/dark/focus projections passed with no storage or overflow | Pass | 2026-09-02 |
 | azd package | azd 1.32 package build completed successfully | Pass | 2026-09-02 |
 | Platform remote state | Remote state list is accessible through the Entra/OIDC backend | Pass | 2026-09-02 |
-| AzAPI schema validation | AzAPI 2.12 and `Microsoft.Web/sites/basicPublishingCredentialsPolicies@2025-03-01` schema validate | Pass | 2026-09-02 |
+| AzAPI update validation | AzAPI 2.12 accepts `Microsoft.Web/sites/basicPublishingCredentialsPolicies@2025-03-01` with the existing FTP child resource ID and `properties.allow` body | Pass | 2026-09-02 |
 | Workflow and static remediation checks | Workflow YAML, extracted cleanup shell `bash -n`, site telemetry tests, JSON-LD checks, and diff check passed | Pass | 2026-09-02 |
 | Platform remote live plan | Bootstrap-owned resource group and backend resolved; original accepted plan: 25 add, 0 change, 0 destroy | Pass; original plan did not include AzAPI | 2026-09-02 |
-| Platform remediation remote plan | AzAPI FTP policy: 1 intended create; Function app sensitive Application Insights setting drift identified. Local interactive preview also shows two deployer-role replacements solely because `data.azurerm_client_config` resolves Adam rather than the pipeline service principal; do not apply locally | Pass; pipeline identity required | 2026-09-02 |
+| Platform remediation remote plan | Azure already materializes the FTP child policy; AzAPI therefore uses update-only semantics against its exact resource ID to set `allow=false`, rather than attempting ARM creation or import. Function app sensitive Application Insights setting drift remains. Local interactive preview also shows two deployer-role replacements solely because `data.azurerm_client_config` resolves Adam rather than the pipeline service principal; do not apply locally | Pass; pipeline identity required | 2026-09-02 |
 | First live Function deployment | Function indexed after the AI 3.1.2 startup fix, but legacy empty storage settings caused MAC authentication failure, trigger-sync failure, and a no-op timer | Fail; remediation in workflow | 2026-09-02 |
 | Live static RBAC | Exactly six UAMI roles; pipeline service principal has resource-group Owner plus state, Function-host, and archive scoped Blob Data Contributor roles | Pass | 2026-09-02 |
 | Protected GitHub pipeline deployment | Re-run pending; must remove only injected legacy settings, preserve five UAMI host-storage settings, verify FTP policy, sync/assert the sole timer, and run `azd show` | Pending | 2026-09-02 |
