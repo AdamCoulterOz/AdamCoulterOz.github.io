@@ -111,13 +111,50 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
 
-      - name: Check Azure providers, quota API, and Flex runtime availability
+      - name: Check Azure providers and Flex runtime availability
         run: |
+          provider_failed=0
           for provider in Microsoft.Authorization Microsoft.Insights Microsoft.ManagedIdentity Microsoft.OperationalInsights Microsoft.Quota Microsoft.Storage Microsoft.Web; do
-            test "$(az provider show --namespace "$provider" --query registrationState --output tsv)" = "Registered"
+            if ! registration_state="$(az provider show --namespace "$provider" --query registrationState --output tsv)"; then
+              registration_state="unavailable"
+            fi
+            if [ "$registration_state" != "Registered" ]; then
+              echo "Provider registration predicate failed: $provider must be Registered (actual: ${registration_state:-unavailable})." >&2
+              provider_failed=1
+            fi
           done
-          az quota list --scope "/subscriptions/$AZURE_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/$AZURE_LOCATION" --query 'length(@)' --output tsv | grep -Eq '^[1-9][0-9]*$'
-          az functionapp list-flexconsumption-locations --runtime dotnet-isolated --show-details true --query "length([?name=='$AZURE_LOCATION' && length(details[0].\"runtime-details\"[?version=='10']) > \`0\`])" --output tsv | grep -Fx '1'
+          if [ "$provider_failed" -ne 0 ]; then
+            exit 1
+          fi
+
+          # Microsoft.Quota can return MissingRegistrationForResourceProvider immediately
+          # after its control-plane registration reports Registered. Provider registration
+          # and the exact Flex runtime catalog query below are the deployment predicates;
+          # quota API availability is advisory until this propagation inconsistency clears.
+          if quota_output="$(az quota list --scope "/subscriptions/$AZURE_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/$AZURE_LOCATION" --query 'length(@)' --output tsv 2>&1)"; then
+            quota_status=0
+          else
+            quota_status=$?
+          fi
+          if [ "$quota_status" -eq 0 ]; then
+            if ! printf '%s\n' "$quota_output" | grep -Eq '^[1-9][0-9]*$'; then
+              echo "Quota API predicate failed: expected a positive Microsoft.Web quota result for $AZURE_LOCATION, got: $quota_output" >&2
+              exit 1
+            fi
+          elif printf '%s\n' "$quota_output" | grep -Fqi 'MissingRegistrationForResourceProvider'; then
+            echo "Quota API advisory: Microsoft.Quota returned MissingRegistrationForResourceProvider despite its Registered control-plane state; continuing with the blocking provider and Flex catalog predicates." >&2
+          else
+            echo "Quota API probe failed unexpectedly (exit $quota_status): $quota_output" >&2
+            exit "$quota_status"
+          fi
+
+          if ! flex_runtime_count="$(az functionapp list-flexconsumption-locations --runtime dotnet-isolated --show-details true --query "length([?name=='$AZURE_LOCATION' && length(details[0].\"runtime-details\"[?version=='10']) > \`0\`])" --output tsv)"; then
+            flex_runtime_count="unavailable"
+          fi
+          if [ "$flex_runtime_count" != "1" ]; then
+            echo "Flex runtime predicate failed: Australia East must offer dotnet-isolated version 10 (matching locations: ${flex_runtime_count:-unavailable})." >&2
+            exit 1
+          fi
 
       - name: Configure Terraform OIDC backend
         run: |
