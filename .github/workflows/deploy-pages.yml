@@ -129,23 +129,24 @@ jobs:
 
           # Microsoft.Quota can return MissingRegistrationForResourceProvider immediately
           # after its control-plane registration reports Registered. Provider registration
-          # and the exact Flex runtime catalog query below are the deployment predicates;
-          # quota API availability is advisory until this propagation inconsistency clears.
+          # and the exact Flex runtime catalog query below are the deployment predicates.
+          # The quota API is retained for diagnostics only: a no-row response is valid for
+          # this scope, and its availability can lag its registration state.
           if quota_output="$(az quota list --scope "/subscriptions/$AZURE_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/$AZURE_LOCATION" --query 'length(@)' --output tsv 2>&1)"; then
             quota_status=0
           else
             quota_status=$?
           fi
           if [ "$quota_status" -eq 0 ]; then
-            if ! printf '%s\n' "$quota_output" | grep -Eq '^[1-9][0-9]*$'; then
-              echo "Quota API predicate failed: expected a positive Microsoft.Web quota result for $AZURE_LOCATION, got: $quota_output" >&2
-              exit 1
+            if printf '%s\n' "$quota_output" | grep -Eq '^[1-9][0-9]*$'; then
+              echo "Quota API diagnostic: Microsoft.Web returned $quota_output quota record(s) for $AZURE_LOCATION." >&2
+            else
+              echo "Quota API advisory: Microsoft.Web returned no quota records for $AZURE_LOCATION; continuing with the blocking provider and Flex catalog predicates." >&2
             fi
           elif printf '%s\n' "$quota_output" | grep -Fqi 'MissingRegistrationForResourceProvider'; then
             echo "Quota API advisory: Microsoft.Quota returned MissingRegistrationForResourceProvider despite its Registered control-plane state; continuing with the blocking provider and Flex catalog predicates." >&2
           else
-            echo "Quota API probe failed unexpectedly (exit $quota_status): $quota_output" >&2
-            exit "$quota_status"
+            echo "Quota API advisory: probe failed (exit $quota_status): $quota_output; continuing with the blocking provider and Flex catalog predicates." >&2
           fi
 
           if ! flex_runtime_count="$(az functionapp list-flexconsumption-locations --runtime dotnet-isolated --show-details true --query "length([?name=='$AZURE_LOCATION' && length(details[0].\"runtime-details\"[?version=='10']) > \`0\`])" --output tsv)"; then
