@@ -108,6 +108,14 @@ jobs:
       - name: Set up Azure Developer CLI
         uses: Azure/setup-azd@17a3d5f2aa75a53c7f6fa815c18ef1445c73257f # v2.2.0
 
+      - name: Sign in to Azure Developer CLI using GitHub OIDC
+        run: >-
+          azd auth login
+          --client-id "${{ vars.AZURE_CLIENT_ID }}"
+          --tenant-id "${{ vars.AZURE_TENANT_ID }}"
+          --federated-credential-provider github
+          --no-prompt
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
 
