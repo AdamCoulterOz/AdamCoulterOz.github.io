@@ -37,6 +37,8 @@ Its header also provides direct email, LinkedIn, and GitHub profile links.
 - The Application Insights connection string is generated only in the staged Pages artifact; it is not committed or retained as a long-lived GitHub secret.
 - The weekly Function runs on Flex Consumption FC1 with one 2,048 MB instance maximum and no always-ready instances. Its user-assigned managed identity, not storage keys or connection strings, accesses Log Analytics and archive storage.
 - Archive rows are create-only and checkpoints advance by ETag only after record blobs and manifests are durable; a failed run can replay but cannot acknowledge a gap.
+- The first live Function deployment indexed after the Application Insights 3.1.2 startup correction, but a package-injected legacy empty storage setting caused MAC authentication and trigger-sync failure. The pipeline now removes only the two known injected legacy settings, verifies the five identity-based host-storage settings, and asserts the sole weekly timer before acceptance.
+- The Function app's FTP basic-publishing-credentials policy is managed explicitly through pinned AzAPI because the required Web Apps API surface is not reliably exposed by the AzureRM schema. The deployer retains only resource-group Owner plus scoped storage data-plane roles needed by azd/package operations.
 
 ## Operational constraints
 
@@ -49,3 +51,4 @@ Its header also provides direct email, LinkedIn, and GitHub profile links.
 
 - Add future project sites to the index only after their Pages deployment is live.
 - Add a separate durable daily checkpoint-health watchdog before claiming stale-weekly-run alerts.
+- Re-run and accept the protected deployment after the legacy-setting remediation; verify a real scheduled run produces archive records before claiming weekly archive output.

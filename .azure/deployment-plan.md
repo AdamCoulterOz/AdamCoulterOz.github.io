@@ -216,11 +216,12 @@ The protected `github-pages` environment job receives `id-token: write` and uses
 4. Run the fresh quota/provider preflight.
 5. Run `azd provision --no-prompt` so Terraform plans/applies the platform resources and RBAC.
 6. Wait for RBAC propagation, then deploy the tested Function package with `azd deploy --no-prompt`.
-7. Read and mask the public site Application Insights connection string.
-8. Generate `site/app-insights-config.js` only in the staged Pages artifact.
-9. Re-run static and telemetry-configuration checks.
-10. Upload and deploy the Pages artifact.
-11. Run bounded post-deployment telemetry and archive smoke checks without manufacturing a production visitor identity.
+7. Remove only any package-deployment-injected `AzureWebJobsStorage` and `DEPLOYMENT_STORAGE_CONNECTION_STRING` settings, verify the Terraform-managed identity host-storage settings and assigned client identity remain, and sync/assert the sole `WeeklyArchiveFunction` timer trigger.
+8. Read and mask the public site Application Insights connection string.
+9. Generate `site/app-insights-config.js` only in the staged Pages artifact.
+10. Re-run static and telemetry-configuration checks.
+11. Upload and deploy the Pages artifact.
+12. Run bounded post-deployment telemetry and archive smoke checks without manufacturing a production visitor identity.
 
 Terraform/Azure provisioning must succeed before Pages is changed, preventing a site release that references missing telemetry infrastructure.
 
@@ -258,7 +259,11 @@ Terraform/Azure provisioning must succeed before Pages is changed, preventing a 
 
 ### Required workflow handoff
 
-The pre-bootstrap validation workflow has advanced this plan to `Validated`. Apply and accept bootstrap first; the platform live plan must then run and be accepted before platform provisioning.
+Pre-deployment validation and bootstrap/state migration are complete. The first deployed Function attempt indexed successfully after the Application Insights 3.1.2 startup fix, then failed trigger synchronisation because package deployment left a legacy `AzureWebJobsStorage`/`DEPLOYMENT_STORAGE_CONNECTION_STRING` setting with an empty value. That setting caused MAC authentication failures and a no-op timer. The workflow now removes only those injected legacy settings, verifies the five Terraform-managed identity host-storage settings, synchronises triggers, and asserts that `WeeklyArchiveFunction` is the sole timer trigger before reporting success.
+
+The platform Terraform also manages the Function app FTP basic-publishing-credentials policy through the pinned AzAPI provider (`Microsoft.Web/sites/basicPublishingCredentialsPolicies@2025-03-01`, `allow=false`). This is an intentional provider-boundary decision: the required API surface is not reliably represented by the current AzureRM schema, and the resource is declarative, scoped to the dedicated Function app, and validated in the platform plan.
+
+The deployer service principal retains `Owner` on the dedicated resource group and requires scoped `Storage Blob Data Contributor` assignments on the Function host and archive accounts so azd/package deployment and container operations can use Entra data-plane access. These roles do not broaden the service principal beyond the dedicated resource group.
 
 ---
 
@@ -268,14 +273,14 @@ The pre-bootstrap validation workflow has advanced this plan to `Validated`. App
 |---|---|---|
 | `.azure/deployment-plan.md` | Source-of-truth plan | Complete; Validated |
 | `infra/bootstrap/` | One-time RG, state, Entra app/SP/OIDC, and bootstrap RBAC Terraform | Implemented; applied; post-apply/post-migration plan has no changes |
-| `archive/azure.yaml` | azd service and Terraform orchestration | Implemented; not provisioned |
-| `archive/infra/` | Platform Terraform derived from the official Flex Functions template | Implemented; not applied |
-| `archive/src/` | .NET 10 isolated weekly timer only; no HTTP recovery endpoint | Implemented; not deployed |
-| `archive/*.csproj` | Pinned Function/Azure SDK dependencies and isolated-worker build | Implemented; validation pending |
-| `archive/tests/` | Cursor, retry, batching, idempotency, and fixture tests | Implemented; validation pending |
-| `site/index.html` | Loader/config references, explicit page/click telemetry, privacy copy | Implemented; validation pending |
-| `site/app-insights.js` | First-party allowlisted telemetry initialization and events | Implemented; validation pending |
-| `.github/workflows/deploy-pages.yml` | OIDC, azd/Terraform, Function, generated config, Pages sequencing | Implemented; not run against Azure |
+| `archive/azure.yaml` | azd service and Terraform orchestration | Implemented; used by the live protected deployment |
+| `archive/infra/` | Platform Terraform derived from the official Flex Functions template | Deployed; FTP-policy remediation validated and pending pipeline apply |
+| `archive/src/` | .NET 10 isolated weekly timer only; no HTTP recovery endpoint | Implemented; deployment indexing fixed; scheduled output unproven |
+| `archive/*.csproj` | Pinned Function/Azure SDK dependencies and isolated-worker build | Validated and deployed; startup compatibility corrected |
+| `archive/tests/` | Cursor, retry, batching, idempotency, and fixture tests | Validated; 17/17 passing |
+| `site/index.html` | Loader/config references, explicit page/click telemetry, privacy copy | Deployed and live-verified |
+| `site/app-insights.js` | First-party allowlisted telemetry initialization and events | Deployed; live page-view ingestion verified |
+| `.github/workflows/deploy-pages.yml` | OIDC, azd/Terraform, Function, generated config, Pages sequencing | Initial live runs completed; remediation rerun pending |
 | `CONTEXT.md` | Current architecture/invariants | Implemented |
 | `INTERFACE.md` | Public telemetry/privacy behavior and external boundaries | Implemented |
 | `HISTORY.md` | Architectural and lifecycle decision record | Implemented |
@@ -300,7 +305,7 @@ The pre-bootstrap validation workflow has advanced this plan to `Validated`. App
 ### Phase 2: execution
 
 - [x] Research and verify current provider/action/SDK versions and official template revisions.
-- [x] Register required Azure resource providers and re-run quotas; API wildcard result leaves ARG fallback applicable.
+- [x] Register required Azure resource providers and probe quotas; the API's no-row/registration-inconsistency outcomes are diagnostic, with the accepted ARG/Flex-catalog fallback retained.
 - [x] Generate, apply, and validate bootstrap Terraform; its post-migration remote plan has no changes.
 - [x] Prove the bootstrap OIDC trust and RBAC scope.
 - [x] Initialize the official Terraform Flex Functions template non-interactively.
@@ -308,13 +313,14 @@ The pre-bootstrap validation workflow has advanced this plan to `Validated`. App
 - [x] Add telemetry and documentation changes.
 - [x] Add the protected pipeline sequence.
 - [x] Run focused unit, static, rendered, Terraform, identity, and failure-path checks.
-- [x] Update status to `Ready for Validation` after owner acceptance.
+- [x] Update status to `Validated` after owner acceptance.
 
 ### Phase 3: validation and deployment
 
 - [x] Invoke pre-bootstrap Azure validation and populate validation proof below.
-- [x] Update status to `Validated` after all required pre-deployment proof passed.
-- [ ] Invoke the Azure deployment workflow.
+- [x] Update status to `Validated` after implementation and pre-deployment proof passed.
+- [x] Invoke the initial Azure deployment workflow and record the live Function acceptance failures.
+- [ ] Invoke the remediation workflow and validate the post-azd legacy-setting cleanup.
 - [ ] Confirm live Pages behavior, telemetry ingestion, weekly Function state, raw archive output, alert routing, and pipeline state.
 - [ ] Update status to `Deployed`.
 
@@ -322,18 +328,18 @@ The pre-bootstrap validation workflow has advanced this plan to `Validated`. App
 
 ## 11. Validation proof
 
-Azure validation is complete. The platform live plan depended on the bootstrap-owned resource group and remote backend; after bootstrap it ran remotely and was accepted before platform provisioning.
+Azure validation is complete. The platform live plan depended on the bootstrap-owned resource group and remote backend; after bootstrap it ran remotely and was accepted before platform provisioning. A separate remediation remote plan validates the AzAPI FTP policy and the corrected Function settings, while live pipeline rerun and timer/archive acceptance remain pending after the failed first trigger-sync attempt described above.
 
 | Check | Command or evidence | Result | Timestamp |
 |---|---|---|---|
-| Function build | .NET 10 Release build completed with 0 warnings | Pass | 2026-09-02 |
-| Function tests | 15/15 tests passed | Pass | 2026-09-02 |
+| Function build | .NET SDK 10.0.400 Release build completed with 0 warnings/errors | Pass | 2026-09-02 |
+| Function tests | 17/17 tests passed | Pass | 2026-09-02 |
 | Terraform static validation | Both Terraform roots passed `fmt`, `init -backend=false`, and `validate` | Pass | 2026-09-02 |
 | Subscription identity | Current Basics subscription ID and tenant/user match the approved subscription and tenant | Pass | 2026-09-02 |
-| Providers and quota API | `Microsoft.Quota` and all required providers are Registered; quota API is accessible, with only a non-applicable wildcard result | Pass; ARG fallback retained | 2026-09-02 |
+| Providers and quota API | `Microsoft.Quota` and all required providers are Registered; the quota API may return no rows or a contradictory registration error, so it remains diagnostic | Pass; ARG/Flex-catalog fallback retained | 2026-09-02 |
 | Flex catalog | Australia East catalog supports `dotnet-isolated` 10, FC1, 2,048 MB, and a minimum maximum-instance count of 1 | Pass | 2026-09-02 |
 | Policy | Only the inherited `ASC Default` policy assignment is present | Pass | 2026-09-02 |
-| Azure Resource Graph capacity | Counts remain 29 storage accounts and 28 plans, sites, workspaces, and components; target resource group/application are absent and all three storage-account names are available | Pass | 2026-09-02 |
+| Pre-deployment Azure Resource Graph capacity | Snapshot found 29 storage accounts and 28 plans, sites, workspaces, and components; the target names were then available | Pass; historical pre-provision check | 2026-09-02 |
 | Bootstrap pre-apply plan | Approved tenant/subscription plan: 0 add, 1 change, 0 destroy (the exact FIC subject correction) | Pass | 2026-09-02 |
 | Bootstrap live apply | Applied with 0 add, 1 change, 0 destroy; app, client, and service-principal IDs and role scopes remained unchanged | Pass | 2026-09-02 |
 | Bootstrap identity and RBAC | Entra application/service principal and corrected exact `github-pages` environment FIC present; Owner is scoped only to the resource group and Storage Blob Data Contributor only to the state account | Pass | 2026-09-02 |
@@ -342,11 +348,20 @@ Azure validation is complete. The platform live plan depended on the bootstrap-o
 | azd availability | `azd` 1.32 installed | Pass | 2026-09-02 |
 | Browser/static checks | JavaScript unit and syntax, workflow YAML, and diff checks passed | Pass | 2026-09-02 |
 | Rendered site checks | 1440 px and 320 px light/dark/focus projections passed with no storage or overflow | Pass | 2026-09-02 |
-| Platform remote live plan | Bootstrap-owned resource group and backend resolved; accepted plan: 25 add, 0 change, 0 destroy | Pass | 2026-09-02 |
-| Protected GitHub pipeline deployment | Platform provisioning, Pages deployment, and post-deployment verification remain pending | Pending | 2026-09-02 |
+| azd package | azd 1.32 package build completed successfully | Pass | 2026-09-02 |
+| Platform remote state | Remote state list is accessible through the Entra/OIDC backend | Pass | 2026-09-02 |
+| AzAPI schema validation | AzAPI 2.12 and `Microsoft.Web/sites/basicPublishingCredentialsPolicies@2025-03-01` schema validate | Pass | 2026-09-02 |
+| Workflow and static remediation checks | Workflow YAML, extracted cleanup shell `bash -n`, site telemetry tests, JSON-LD checks, and diff check passed | Pass | 2026-09-02 |
+| Platform remote live plan | Bootstrap-owned resource group and backend resolved; original accepted plan: 25 add, 0 change, 0 destroy | Pass; original plan did not include AzAPI | 2026-09-02 |
+| Platform remediation remote plan | AzAPI FTP policy: 1 intended create; Function app sensitive Application Insights setting drift identified. Local interactive preview also shows two deployer-role replacements solely because `data.azurerm_client_config` resolves Adam rather than the pipeline service principal; do not apply locally | Pass; pipeline identity required | 2026-09-02 |
+| First live Function deployment | Function indexed after the AI 3.1.2 startup fix, but legacy empty storage settings caused MAC authentication failure, trigger-sync failure, and a no-op timer | Fail; remediation in workflow | 2026-09-02 |
+| Live static RBAC | Exactly six UAMI roles; pipeline service principal has resource-group Owner plus state, Function-host, and archive scoped Blob Data Contributor roles | Pass | 2026-09-02 |
+| Protected GitHub pipeline deployment | Re-run pending; must remove only injected legacy settings, preserve five UAMI host-storage settings, verify FTP policy, sync/assert the sole timer, and run `azd show` | Pending | 2026-09-02 |
+| Site telemetry live evidence | Two privacy-safe site page views observed in Log Analytics | Pass; archive output not yet eligible/proven | 2026-09-02 |
+| Weekly archive output | No scheduled execution has yet produced durable raw archive records and manifests | Unproven; do not claim deployed archival evidence | 2026-09-02 |
 
 ---
 
 ## 12. Next step
 
-Run the protected GitHub pipeline for platform provisioning and deployment. Platform deployment and live verification remain pending; do not mark this plan `Deployed` until their required evidence is complete.
+Re-run the protected GitHub pipeline for platform provisioning and deployment. Validate the narrowly scoped post-azd setting cleanup, Function trigger metadata, live Pages telemetry, and then wait for a real weekly timer execution to prove durable raw archive output. Do not mark this plan `Deployed` until those required evidence gates are complete.

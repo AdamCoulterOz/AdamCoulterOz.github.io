@@ -6,6 +6,12 @@
 - Added a protected-environment GitHub OIDC deployment path, separate bootstrap and platform Terraform state roots, and an FC1 scale-to-zero .NET 10 archive worker using UAMI/RBAC and LRS create-only checkpointed storage.
 - Recorded 0.1 GB/day ingestion caps and immediate archive-failure email notification. The scheduled-query v2 48-hour limit means an eight-day stale-run alert is not deployed; a durable daily watchdog is a future enhancement.
 
+## 2026-09-02: Capture first live Function acceptance failure and remediation
+
+- The first live .NET 10 Function deployment indexed after the Application Insights 3.1.2 startup correction, but package deployment left an empty legacy storage setting that caused MAC authentication and trigger-sync failure; the timer therefore did not execute.
+- Added narrowly scoped post-deployment cleanup and trigger assertions, while preserving Terraform-managed UAMI/RBAC host-storage settings. Added the Function FTP basic-publishing-credentials policy through pinned AzAPI because the needed Web Apps API surface is not reliably available in AzureRM.
+- Kept the plan at `Ready for Validation`: site telemetry is proven, but weekly durable archive output remains unproven until a real scheduled execution.
+
 ## 2026-09-02: Add direct contact and profile links
 
 - Replaced the standalone GitHub header link with accessible email, LinkedIn, and GitHub links.

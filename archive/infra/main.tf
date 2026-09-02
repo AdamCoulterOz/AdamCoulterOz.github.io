@@ -262,6 +262,23 @@ resource "azurerm_function_app_flex_consumption" "archive" {
   ]
 }
 
+# AzureRM 5.3 does not model the site's FTP basic-publishing policy. The
+# Microsoft.Web 2025-03-01 ARM schema defines this child as `ftp` with the
+# required `properties.allow` boolean, so retain the control declaratively
+# through AzAPI rather than depending on a portal/manual setting.
+resource "azapi_resource" "archive_ftp_basic_publishing" {
+  type      = "Microsoft.Web/sites/basicPublishingCredentialsPolicies@2025-03-01"
+  name      = "ftp"
+  parent_id = azurerm_function_app_flex_consumption.archive.id
+  body = {
+    properties = {
+      allow = false
+    }
+  }
+  schema_validation_enabled = true
+  response_export_values    = ["properties.allow"]
+}
+
 resource "azurerm_monitor_action_group" "archive_failure" {
   name                = "ag-adamcgp-archive-failure"
   resource_group_name = data.azurerm_resource_group.project.name

@@ -199,6 +199,96 @@ jobs:
         working-directory: archive
         run: azd deploy archive --no-prompt --environment "$AZURE_ENV_NAME"
 
+      - name: Restore managed-identity host storage and verify archive trigger
+        working-directory: archive
+        run: |
+          set -euo pipefail
+          function_name="$(azd env get-value AZURE_FUNCTION_NAME --environment "$AZURE_ENV_NAME")"
+          test -n "$function_name"
+
+          # OneDeploy can leave these legacy settings behind while publishing the
+          # package. They override the Terraform-owned identity-based host-storage
+          # configuration, and cannot work because shared keys are disabled.
+          pre_cleanup_settings="$(az functionapp config appsettings list --resource-group "$AZURE_RESOURCE_GROUP" --name "$function_name" --output json)"
+          legacy_setting_names=()
+          for setting_name in AzureWebJobsStorage DEPLOYMENT_STORAGE_CONNECTION_STRING; do
+            if jq -e --arg setting_name "$setting_name" 'any(.[]; .name == $setting_name)' <<< "$pre_cleanup_settings" >/dev/null; then
+              legacy_setting_names+=("$setting_name")
+            fi
+          done
+          if [ "${#legacy_setting_names[@]}" -gt 0 ]; then
+            az functionapp config appsettings delete \
+              --resource-group "$AZURE_RESOURCE_GROUP" \
+              --name "$function_name" \
+              --setting-names "${legacy_setting_names[@]}" \
+              --output none
+          fi
+
+          app_settings="$(az functionapp config appsettings list --resource-group "$AZURE_RESOURCE_GROUP" --name "$function_name" --output json)"
+          if jq -e 'any(.[]; .name == "AzureWebJobsStorage" or .name == "DEPLOYMENT_STORAGE_CONNECTION_STRING")' <<< "$app_settings" >/dev/null; then
+            echo "Legacy shared-key host or deployment-storage setting remains after cleanup." >&2
+            exit 1
+          fi
+
+          setting_value() {
+            jq -er --arg setting_name "$1" '
+              [.[] | select(.name == $setting_name) | .value]
+              | if length == 1 and .[0] != "" then .[0]
+                else error("required managed-identity setting is missing or empty: " + $setting_name)
+                end
+            ' <<< "$app_settings"
+          }
+
+          host_credential="$(setting_value AzureWebJobsStorage__credential)"
+          host_client_id="$(setting_value AzureWebJobsStorage__clientId)"
+          blob_service_uri="$(setting_value AzureWebJobsStorage__blobServiceUri)"
+          queue_service_uri="$(setting_value AzureWebJobsStorage__queueServiceUri)"
+          table_service_uri="$(setting_value AzureWebJobsStorage__tableServiceUri)"
+          test "$host_credential" = "managedidentity"
+
+          case "$blob_service_uri" in
+            https://*.blob.core.windows.net/) ;;
+            *)
+              echo "AzureWebJobsStorage blob service URI is not the expected public Azure Storage URI." >&2
+              exit 1
+              ;;
+          esac
+          host_storage_account="${blob_service_uri#https://}"
+          host_storage_account="${host_storage_account%.blob.core.windows.net/}"
+          test -n "$host_storage_account"
+          test "$queue_service_uri" = "https://${host_storage_account}.queue.core.windows.net/"
+          test "$table_service_uri" = "https://${host_storage_account}.table.core.windows.net/"
+
+          assigned_identity_count="$(az functionapp identity show --resource-group "$AZURE_RESOURCE_GROUP" --name "$function_name" --query 'length(userAssignedIdentities)' --output tsv)"
+          test "$assigned_identity_count" = "1"
+          assigned_identity_client_id="$(az functionapp identity show --resource-group "$AZURE_RESOURCE_GROUP" --name "$function_name" --query 'userAssignedIdentities.*.clientId | [0]' --output tsv)"
+          test -n "$assigned_identity_client_id"
+          test "$host_client_id" = "$assigned_identity_client_id"
+
+          sync_uri="/subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.Web/sites/$function_name/syncfunctiontriggers?api-version=2024-11-01"
+          expected_function_name="${function_name}/WeeklyArchiveFunction"
+          for attempt in {1..18}; do
+            if az rest --method post --uri "$sync_uri" --output none 2>/dev/null; then
+              if indexed_functions="$(az functionapp function list --resource-group "$AZURE_RESOURCE_GROUP" --name "$function_name" --output json 2>/dev/null)" \
+                && jq -e 'type == "array"' <<< "$indexed_functions" >/dev/null; then
+                indexed_function_count="$(jq -r 'length' <<< "$indexed_functions")"
+                expected_function_count="$(jq -r --arg expected_function_name "$expected_function_name" '[.[] | select(.name == $expected_function_name)] | length' <<< "$indexed_functions")"
+                timer_trigger_count="$(jq -r --arg expected_function_name "$expected_function_name" '[.[] | select(.name == $expected_function_name) | .config.bindings[]? | select(.type == "timerTrigger")] | length' <<< "$indexed_functions")"
+                if [ "$indexed_function_count" = "1" ] && [ "$expected_function_count" = "1" ] && [ "$timer_trigger_count" = "1" ]; then
+                  exit 0
+                fi
+              fi
+            fi
+            sleep 10
+          done
+
+          echo "WeeklyArchiveFunction was not indexed as the sole timer-triggered Function after managed-identity host-storage restoration." >&2
+          exit 1
+
+      - name: Show deployed Azure environment
+        working-directory: archive
+        run: azd show --environment "$AZURE_ENV_NAME"
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
