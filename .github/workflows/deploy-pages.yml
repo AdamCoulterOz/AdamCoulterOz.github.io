@@ -4,46 +4,208 @@ on:
   push:
     branches:
       - main
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
-  deploy:
+  validate-site:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.0.0
+        with:
+          dotnet-version: 10.0.x
 
-      - name: Verify site
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+
+      - name: Restore, build, and test archive Function
+        run: |
+          dotnet restore archive/http.sln
+          dotnet build archive/http.sln --configuration Release --no-restore
+          dotnet test archive/http.sln --configuration Release --no-build
+
+      - name: Validate Terraform without remote state
+        run: |
+          for root in infra/bootstrap archive/infra; do
+            test -d "$root"
+            terraform -chdir="$root" fmt -check -recursive
+            terraform -chdir="$root" init -backend=false -input=false
+            terraform -chdir="$root" validate
+          done
+
+      - name: Verify static site source
         run: |
           test -f site/index.html
           test -f site/styles.css
           test -f site/404.html
+          test -f site/app-insights.js
+          test ! -e site/app-insights-config.js
           grep -F 'href="/bandwidth-calculator/"' site/index.html
           grep -F 'href="/fluent-icon-browser/"' site/index.html
           grep -F 'href="/Meridian/"' site/index.html
+          grep -F 'disableCookiesUsage: true' site/app-insights.js
+          grep -F 'isStorageUseDisabled: true' site/app-insights.js
+          grep -F 'disableAjaxTracking: true' site/app-insights.js
+          grep -F 'disableFetchTracking: true' site/app-insights.js
+          grep -F 'disableCorrelationHeaders: true' site/app-insights.js
+          grep -F 'autoTrackPageVisitTime: false' site/app-insights.js
+          grep -F 'disableExceptionTracking: true' site/app-insights.js
+          if rg -n -i 'connectionstring=.*(instrumentationkey|ingestionendpoint)|instrumentationkey=' site; then
+            echo "Committed site source must not contain an Application Insights connection string." >&2
+            exit 1
+          fi
+          node --check site/app-insights.js
+          node site/app-insights.test.js
+          node -e 'JSON.parse(require("fs").readFileSync("site/index.html", "utf8").match(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/)[1])'
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate-site
+    runs-on: ubuntu-latest
+    concurrency:
+      group: github-pages-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_LOCATION: australiaeast
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      TFSTATE_RESOURCE_GROUP: ${{ vars.TFSTATE_RESOURCE_GROUP }}
+      TFSTATE_STORAGE_ACCOUNT: ${{ vars.TFSTATE_STORAGE_ACCOUNT }}
+      TFSTATE_CONTAINER: ${{ vars.TFSTATE_CONTAINER }}
+      ARM_USE_OIDC: true
+      ARM_USE_AZUREAD: true
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+
+      - name: Sign in to Azure using the protected environment identity
+        uses: azure/login@8216e11d8cd9b42fe925c852af8e76311ff067ac # v2.3.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Azure Developer CLI
+        uses: Azure/setup-azd@17a3d5f2aa75a53c7f6fa815c18ef1445c73257f # v2.2.0
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+
+      - name: Check Azure providers, quota API, and Flex runtime availability
+        run: |
+          for provider in Microsoft.Authorization Microsoft.Insights Microsoft.ManagedIdentity Microsoft.OperationalInsights Microsoft.Quota Microsoft.Storage Microsoft.Web; do
+            test "$(az provider show --namespace "$provider" --query registrationState --output tsv)" = "Registered"
+          done
+          az quota list --scope "/subscriptions/$AZURE_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/$AZURE_LOCATION" --query 'length(@)' --output tsv | grep -Eq '^[1-9][0-9]*$'
+          az functionapp list-flexconsumption-locations --runtime dotnet-isolated --show-details true --query "length([?name=='$AZURE_LOCATION' && length(details[0].\"runtime-details\"[?version=='10']) > \`0\`])" --output tsv | grep -Fx '1'
+
+      - name: Configure Terraform OIDC backend
+        run: |
+          test -n "$TFSTATE_RESOURCE_GROUP"
+          test -n "$TFSTATE_STORAGE_ACCOUNT"
+          test -n "$TFSTATE_CONTAINER"
+          printf '%s\n' "TF_CLI_ARGS_init=-reconfigure -backend-config=resource_group_name=$TFSTATE_RESOURCE_GROUP -backend-config=storage_account_name=$TFSTATE_STORAGE_ACCOUNT -backend-config=container_name=$TFSTATE_CONTAINER -backend-config=key=platform/terraform.tfstate -backend-config=use_azuread_auth=true -backend-config=use_oidc=true" >> "$GITHUB_ENV"
+
+      - name: Initialize platform Terraform backend
+        run: terraform -chdir=archive/infra init -input=false
+
+      - name: Provision archive platform
+        working-directory: archive
+        run: |
+          test -n "$AZURE_ENV_NAME"
+          test -n "$AZURE_RESOURCE_GROUP"
+          azd env new "$AZURE_ENV_NAME" --subscription "$AZURE_SUBSCRIPTION_ID" --location "$AZURE_LOCATION" --no-prompt
+          azd env set AZURE_RESOURCE_GROUP "$AZURE_RESOURCE_GROUP" --environment "$AZURE_ENV_NAME"
+          azd provision --no-prompt --environment "$AZURE_ENV_NAME"
+
+      - name: Wait for Azure resource manager consistency
+        run: |
+          for attempt in {1..12}; do
+            if az group show --name "$AZURE_RESOURCE_GROUP" --output none 2>/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Resource group was not readable after provisioning." >&2
+          exit 1
+
+      - name: Deploy archive Function
+        working-directory: archive
+        run: azd deploy archive --no-prompt --environment "$AZURE_ENV_NAME"
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Stage and verify site
+        run: |
+          test -n "$AZURE_RESOURCE_GROUP"
+          test -f site/index.html
+          test -f site/styles.css
+          test -f site/404.html
+          test -f site/app-insights.js
+          test ! -e site/app-insights-config.js
+          grep -F 'href="/bandwidth-calculator/"' site/index.html
+          grep -F 'href="/fluent-icon-browser/"' site/index.html
+          grep -F 'href="/Meridian/"' site/index.html
+          grep -F 'disableCookiesUsage: true' site/app-insights.js
+          grep -F 'isStorageUseDisabled: true' site/app-insights.js
+          grep -F 'disableAjaxTracking: true' site/app-insights.js
+          grep -F 'disableFetchTracking: true' site/app-insights.js
+          grep -F 'disableCorrelationHeaders: true' site/app-insights.js
+          grep -F 'autoTrackPageVisitTime: false' site/app-insights.js
+          grep -F 'disableExceptionTracking: true' site/app-insights.js
+          if rg -n -i 'connectionstring=.*(instrumentationkey|ingestionendpoint)|instrumentationkey=' site; then
+            echo "Committed site source must not contain an Application Insights connection string." >&2
+            exit 1
+          fi
+          node --check site/app-insights.js
+          node site/app-insights.test.js
+          node -e 'JSON.parse(require("fs").readFileSync("site/index.html", "utf8").match(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/)[1])'
+          staged_site="$RUNNER_TEMP/pages-site"
+          mkdir -p "$staged_site"
+          cp -R site/. "$staged_site/"
+          rm "$staged_site/app-insights.test.js"
+          SITE_APPLICATIONINSIGHTS_NAME="$(cd archive && azd env get-value SITE_APPLICATIONINSIGHTS_NAME --environment "$AZURE_ENV_NAME")"
+          test -n "$SITE_APPLICATIONINSIGHTS_NAME"
+          connection_string="$(az monitor app-insights component show --app "$SITE_APPLICATIONINSIGHTS_NAME" --resource-group "$AZURE_RESOURCE_GROUP" --query connectionString --output tsv)"
+          test -n "$connection_string"
+          echo "::add-mask::$connection_string"
+          export APP_INSIGHTS_CONNECTION_STRING="$connection_string"
+          node -e 'require("fs").writeFileSync(process.argv[1], "window.__appInsightsConnectionString = " + JSON.stringify(process.env.APP_INSIGHTS_CONNECTION_STRING) + ";\n")' "$staged_site/app-insights-config.js"
+          test -s "$staged_site/app-insights-config.js"
+          grep -F 'window.__appInsightsConnectionString = ' "$staged_site/app-insights-config.js" >/dev/null
+          if grep -Eq 'undefined|null' "$staged_site/app-insights-config.js"; then
+            echo "Generated Application Insights configuration is invalid." >&2
+            exit 1
+          fi
+          unset APP_INSIGHTS_CONNECTION_STRING connection_string
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: site
+          path: ${{ runner.temp }}/pages-site
           include-hidden-files: true
 
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.0

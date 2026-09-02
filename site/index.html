@@ -23,6 +23,10 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600&amp;family=Hanken+Grotesk:wght@400;500;600;700;800&amp;display=swap">
     <link rel="stylesheet" href="/keel.css">
     <link rel="stylesheet" href="/styles.css">
+    <!-- The deployment workflow writes this public, runtime-only configuration into its staged artifact. -->
+    <script src="/app-insights-config.js" defer></script>
+    <script src="https://js.monitor.azure.com/scripts/b/ai.3.gbl.min.js" crossorigin="anonymous" defer></script>
+    <script src="/app-insights.js" defer></script>
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -34,7 +38,11 @@
             "@type": "Person",
             "name": "Adam Coulter",
             "url": "https://adamcoulteroz.github.io/",
-            "sameAs": ["https://github.com/AdamCoulterOz"]
+            "email": "ads@me.com",
+            "sameAs": [
+                "https://github.com/AdamCoulterOz",
+                "https://www.linkedin.com/in/adamcoulter"
+            ]
         },
         "hasPart": [
             { "@type": "WebApplication", "name": "Bandwidth Calculator", "url": "https://adamcoulteroz.github.io/bandwidth-calculator/" },
@@ -52,12 +60,26 @@
                 <span class="site-mark" aria-hidden="true">AC</span>
                 <span>Adam Coulter</span>
             </a>
-            <a class="github-link" href="https://github.com/AdamCoulterOz">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.2-1.5 6.2-6.7a5.2 5.2 0 0 0-1.5-3.6 4.9 4.9 0 0 0-.1-3.6s-1.2-.4-3.9 1.5a13.4 13.4 0 0 0-7 0C5.6 1.7 4.4 2.1 4.4 2.1a4.9 4.9 0 0 0-.1 3.6A5.2 5.2 0 0 0 2.8 9.3c0 5.2 3.2 6.4 6.2 6.7a3.4 3.4 0 0 0-.9 2.5V22" />
-                </svg>
-                <span>GitHub</span>
-            </a>
+            <nav class="contact-links" aria-label="Contact and profiles">
+                <a class="contact-link" href="mailto:ads@me.com" aria-label="Email Adam Coulter" data-telemetry-kind="contact" data-telemetry-destination="email">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 5h18v14H3zM3 7l9 6 9-6" />
+                    </svg>
+                    <span>Email</span>
+                </a>
+                <a class="contact-link" href="https://www.linkedin.com/in/adamcoulter" aria-label="Adam Coulter on LinkedIn" data-telemetry-kind="contact" data-telemetry-destination="linkedin">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6.5 8.5v9M6.5 5.5v.1M10.5 17.5v-9M10.5 12.4c0-2.2 1.4-3.9 3.7-3.9 2.4 0 3.3 1.7 3.3 4.2v4.8" />
+                    </svg>
+                    <span>LinkedIn</span>
+                </a>
+                <a class="contact-link" href="https://github.com/AdamCoulterOz" aria-label="Adam Coulter on GitHub" data-telemetry-kind="contact" data-telemetry-destination="github">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.2-1.5 6.2-6.7a5.2 5.2 0 0 0-1.5-3.6 4.9 4.9 0 0 0-.1-3.6s-1.2-.4-3.9 1.5a13.4 13.4 0 0 0-7 0C5.6 1.7 4.4 2.1 4.4 2.1a4.9 4.9 0 0 0-.1 3.6A5.2 5.2 0 0 0 2.8 9.3c0 5.2 3.2 6.4 6.2 6.7a3.4 3.4 0 0 0-.9 2.5V22" />
+                    </svg>
+                    <span>GitHub</span>
+                </a>
+            </nav>
         </div>
     </header>
 
@@ -68,7 +90,7 @@
         </section>
 
         <nav class="project-index" aria-label="Published projects">
-            <a class="project-row" href="/bandwidth-calculator/">
+            <a class="project-row" href="/bandwidth-calculator/" data-telemetry-kind="project" data-telemetry-destination="bandwidth_calculator">
                 <span class="project-number" aria-hidden="true">01</span>
                 <span class="project-copy">
                     <strong>Bandwidth Calculator</strong>
@@ -79,7 +101,7 @@
                 </svg>
             </a>
 
-            <a class="project-row" href="/fluent-icon-browser/">
+            <a class="project-row" href="/fluent-icon-browser/" data-telemetry-kind="project" data-telemetry-destination="fluent_icon_browser">
                 <span class="project-number" aria-hidden="true">02</span>
                 <span class="project-copy">
                     <strong>Fluent Icon Browser</strong>
@@ -90,7 +112,7 @@
                 </svg>
             </a>
 
-            <a class="project-row" href="/Meridian/">
+            <a class="project-row" href="/Meridian/" data-telemetry-kind="project" data-telemetry-destination="meridian">
                 <span class="project-number" aria-hidden="true">03</span>
                 <span class="project-copy">
                     <strong>Meridian</strong>
@@ -101,7 +123,7 @@
                 </svg>
             </a>
 
-            <a class="project-row" href="/retro-texture-studio/">
+            <a class="project-row" href="/retro-texture-studio/" data-telemetry-kind="project" data-telemetry-destination="retro_texture_studio">
                 <span class="project-number" aria-hidden="true">04</span>
                 <span class="project-copy">
                     <strong>Retro Texture Studio</strong>
@@ -122,6 +144,7 @@
             </div>
             <span>Sydney, Australia</span>
         </div>
+        <p class="privacy-disclosure">This site measures cookie-free home-page visits and selected link categories. It does not use persistent identifiers or record email addresses or full link URLs.</p>
     </footer>
 </body>
 </html>

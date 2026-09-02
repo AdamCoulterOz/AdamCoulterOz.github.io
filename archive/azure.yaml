@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: adamcoulter-github-pages-archive
+metadata:
+  template: functions-quickstart-dotnet-azd-terraform@1.1.0
+  templateSourceCommit: 38f0b0a09626cca7bce678ab9b4d5092f7d9c219
+services:
+  archive:
+    project: ./src/
+    language: dotnet
+    host: function
+infra:
+  provider: terraform

@@ -1,0 +1,16 @@
+// Copy this file to backend.tf only after the first local apply succeeds.
+// It is intentionally not part of the initial configuration: Terraform needs
+// local state while it creates the remote state account and its RBAC.
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "rg-adamcoulter-github-pages-aue"
+    storage_account_name = "stadamcgpiac1319345545"
+    container_name       = "tfstate"
+    key                  = "bootstrap/terraform.tfstate"
+
+    // Local migration authenticates through `az login`; no key, SAS, secret,
+    // or certificate is used. GitHub's future Terraform root will use its own
+    // OIDC backend configuration and a different key.
+    use_azuread_auth = true
+  }
+}

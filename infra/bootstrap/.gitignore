@@ -1,0 +1,10 @@
+# Terraform working data and local state must never be committed.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+backend.tf
+
+# Terraform crash output can contain sensitive provider details.
+crash.log
+crash.*.log

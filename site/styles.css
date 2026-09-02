@@ -92,7 +92,13 @@ main,
     letter-spacing: -0.06em;
 }
 
-.github-link {
+.contact-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.contact-link {
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -104,11 +110,11 @@ main,
     transition: color var(--dur-fast) var(--ease-out);
 }
 
-.github-link:hover {
+.contact-link:hover {
     color: var(--text-primary);
 }
 
-.github-link svg {
+.contact-link svg {
     width: 18px;
     height: 18px;
     fill: none;
@@ -225,7 +231,7 @@ h1 {
 }
 
 .site-brand:focus-visible,
-.github-link:focus-visible,
+.contact-link:focus-visible,
 .project-row:focus-visible {
     outline: none;
     border-radius: 10px;
@@ -245,6 +251,15 @@ h1 {
     gap: 32px;
 }
 
+.privacy-disclosure {
+    width: min(100%, 1200px);
+    margin: 22px auto 0;
+    padding-inline: 32px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .footer-brand {
     color: #ffffff;
     font-size: 17px;
@@ -256,6 +271,49 @@ h1 {
     border-color: #7aa2ff;
     background: rgba(122, 162, 255, 0.12);
     color: #7aa2ff;
+}
+
+@media (max-width: 620px) {
+    .site-nav__inner,
+    main,
+    .site-footer__inner,
+    .privacy-disclosure {
+        padding-inline: 20px;
+    }
+
+    .contact-links {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-nav__inner {
+        gap: 12px;
+        padding-inline: 16px;
+    }
+
+    .site-brand > span:last-child,
+    .contact-link > span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .contact-links {
+        gap: 4px;
+    }
+
+    .contact-link {
+        width: 36px;
+        height: 36px;
+        justify-content: center;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -270,7 +328,8 @@ h1 {
 @media (max-width: 680px) {
     .site-nav__inner,
     main,
-    .site-footer__inner {
+    .site-footer__inner,
+    .privacy-disclosure {
         padding-inline: 10px;
     }
 
